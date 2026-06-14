@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#7c3aed">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gastos">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Controle de Gastos</title>
+<link href="https://fonts.googleapis.com/css2?family=Basic&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0020;
+  --bg2: #1a0033;
+  --card: rgba(255,255,255,0.05);
+  --border: rgba(180,100,255,0.22);
+  --purple: #7c3aed;
+  --purple2: #a855f7;
+  --text: #e8d5ff;
+  --muted: #c084fc;
+  --blue: #3b82f6;
+  --blue2: #93c5fd;
+  --input-bg: rgba(130,50,220,0.15);
+  --nav-h: 68px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Basic', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── LAYOUT ── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+/* ── HEADER ── */
+.app-header {
+  background: linear-gradient(135deg, #1a0033, #2d0057);
+  padding: 14px 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+}
+
+.app-header h1 {
+  font-size: 1.15rem;
+  color: #d4a0ff;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 16px #9b30ff66;
+}
+
+.header-logo {
+  height: 38px;
+  width: auto;
+  filter: drop-shadow(0 0 6px #9b30ff55);
+}
+
+/* ── SCROLLABLE CONTENT ── */
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px 12px;
+  padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 10px);
+}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  height: calc(var(--nav-h) + var(--safe-bottom));
+  background: rgba(20, 0, 50, 0.97);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  padding-top: 8px;
+  backdrop-filter: blur(20px);
+  z-index: 100;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: opacity 0.15s;
+  border: none;
+  background: none;
+  color: #7c5ab8;
+  font-family: 'Basic', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.3px;
+}
+
+.nav-item.active { color: var(--purple2); }
+.nav-item .nav-icon { font-size: 1.35rem; line-height: 1; }
+
+/* ── PAGES ── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 14px;
+  backdrop-filter: blur(10px);
+}
+
+.card-title {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-bottom: 1px solid rgba(192,132,252,0.2);
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+}
+
+/* ── FIELD ── */
+.field { margin-bottom: 12px; }
+.field:last-child { margin-bottom: 0; }
+
+.field label {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 5px;
+}
+
+.field input[type="number"] {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid rgba(180,100,255,0.35);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: 'Basic', sans-serif;
+  font-size: 1.05rem;
+  padding: 12px 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+}
+
+.field input[type="number"]:focus {
+  border-color: var(--purple2);
+  box-shadow: 0 0 0 3px rgba(168,85,247,0.18);
+}
+
+.field input::placeholder { color: #6b3ea6; }
+
+/* ── LAZER ACCORDION ── */
+.acc-toggle {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(168,85,247,0.2));
+  border: 1px solid rgba(168,85,247,0.4);
+  border-radius: 12px;
+  color: #d4a0ff;
+  font-family: 'Basic', sans-serif;
+  font-size: 0.9rem;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: background 0.2s;
+}
+
+.acc-toggle:active { background: rgba(124,58,237,0.4); }
+.acc-arrow { transition: transform 0.25s; font-size: 0.8rem; }
+.acc-arrow.open { transform: rotate(180deg); }
+
+.acc-body {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  animation: fadeIn 0.2s ease;
+}
+.acc-body.open { display: flex; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.sub-item {
+  background: rgba(80,20,160,0.2);
+  border: 1px solid rgba(160,80,255,0.25);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.sub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 16px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: #d4a0ff;
+}
+
+.sub-header:active { background: rgba(120,50,220,0.2); }
+.sub-toggle-icon { font-size: 1rem; color: var(--purple2); transition: transform 0.2s; }
+.sub-toggle-icon.open { transform: rotate(45deg); }
+
+.sub-body {
+  display: none;
+  padding: 0 14px 14px;
+}
+.sub-body.open { display: block; }
+
+/* ── TOTAL PAGE ── */
+.total-hero {
+  background: linear-gradient(135deg, rgba(0,0,80,0.6), rgba(20,0,60,0.4));
+  border: 2px solid rgba(59,130,246,0.4);
+  border-radius: 22px;
+  padding: 28px 20px 22px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.total-label-text {
+  font-size: 0.72rem;
+  color: var(--blue2);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+
+.total-big {
+  font-size: clamp(2.4rem, 11vw, 3.8rem);
+  color: var(--blue);
+  text-shadow: 0 0 28px #3b82f655;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.breakdown-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.breakdown-row {
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.15);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.breakdown-row .b-label { color: var(--blue2); }
+.breakdown-row .b-val { color: #60a5fa; font-weight: bold; }
+
+/* ── BUTTONS ── */
+.btn-pdf {
+  width: 100%;
+  background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-family: 'Basic', sans-serif;
+  font-size: 1rem;
+  padding: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  transition: transform 0.1s, box-shadow 0.15s;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+}
+
+.btn-pdf:active { transform: scale(0.97); }
+
+.btn-reset {
+  width: 100%;
+  background: rgba(255,50,50,0.1);
+  border: 1px solid rgba(255,100,100,0.35);
+  border-radius: 14px;
+  color: #fca5a5;
+  font-family: 'Basic', sans-serif;
+  font-size: 0.9rem;
+  padding: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-reset:active { background: rgba(255,50,50,0.2); }
+
+/* ── INSTALL BANNER ── */
+#install-banner {
+  display: none;
+  position: fixed;
+  bottom: calc(var(--nav-h) + var(--safe-bottom) + 8px);
+  left: 12px; right: 12px;
+  background: linear-gradient(135deg, #5b21b6, #7c3aed);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  z-index: 200;
+  box-shadow: 0 8px 30px rgba(124,58,237,0.5);
+}
+
+#install-banner p { flex: 1; font-size: 0.85rem; color: #fff; }
+
+.btn-install {
+  background: #fff;
+  color: #5b21b6;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Basic', sans-serif;
+  font-size: 0.82rem;
+  padding: 8px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-dismiss {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+/* ── MONTH SELECTOR ── */
+.month-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.month-bar span {
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.month-arrow {
+  background: none;
+  border: none;
+  color: var(--purple2);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.month-arrow:active { background: rgba(168,85,247,0.2); }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b3ea6;
+  font-size: 0.9rem;
+}
+.empty-state .emoji { font-size: 2.5rem; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="app-header">
+    <h1>💸 Controle de Gastos</h1>
+    <img class="header-logo"
+      src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Marca_UFABC_Principal_Pantone.png/640px-Marca_UFABC_Principal_Pantone.png"
+      alt="UFABC" onerror="this.style.display='none'">
+  </div>
+
+  <!-- CONTENT -->
+  <div class="page-content" id="content">
+
+    <!-- PAGE: GASTOS -->
+    <div class="page active" id="page-gastos">
+
+      <div class="month-bar">
+        <button class="month-arrow" onclick="changeMonth(-1)">‹</button>
+        <span id="month-label">—</span>
+        <button class="month-arrow" onclick="changeMonth(1)">›</button>
+      </div>
+
+      <!-- MORADIA -->
+      <div class="card">
+        <div class="card-title">🏠 Moradia</div>
+        <div class="field"><label>Aluguel</label>
+          <input type="number" inputmode="decimal" id="aluguel" placeholder="0,00" oninput="save()"></div>
+        <div class="field"><label>Luz</label>
+          <input type="number" inputmode="decimal" id="luz" placeholder="0,00" oninput="save()"></div>
+      </div>
+
+      <!-- MERCADO -->
+      <div class="card">
+        <div class="card-title">🛒 Mercado</div>
+        <div class="field"><label>Comida</label>
+          <input type="number" inputmode="decimal" id="mercado-comida" placeholder="0,00" oninput="save()"></div>
+        <div class="field"><label>Casa</label>
+          <input type="number" inputmode="decimal" id="mercado-casa" placeholder="0,00" oninput="save()"></div>
+      </div>
+
+      <!-- SAÚDE -->
+      <div class="card">
+        <div class="card-title">💪 Saúde & Fitness</div>
+        <div class="field"><label>Academia</label>
+          <input type="number" inputmode="decimal" id="academia" placeholder="0,00" oninput="save()"></div>
+        <div class="field"><label>Suplementação</label>
+          <input type="number" inputmode="decimal" id="suplementacao" placeholder="0,00" oninput="save()"></div>
+      </div>
+
+      <!-- TRANSPORTE -->
+      <div class="card">
+        <div class="card-title">🚌 Transporte</div>
+        <div class="field"><label>Transporte</label>
+          <input type="number" inputmode="decimal" id="transporte" placeholder="0,00" oninput="save()"></div>
+      </div>
+
+      <!-- EDUCAÇÃO -->
+      <div class="card">
+        <div class="card-title">🎓 Educação</div>
+        <div class="field"><label>Faculdade</label>
+          <input type="number" inputmode="decimal" id="faculdade" placeholder="0,00" oninput="save()"></div>
+      </div>
+
+      <!-- PAGAMENTOS -->
+      <div class="card">
+        <div class="card-title">💳 Pagamentos</div>
+        <div class="field"><label>Cartão de Crédito</label>
+          <input type="number" inputmode="decimal" id="cartao" placeholder="0,00" oninput="save()"></div>
+      </div>
+
+      <!-- OUTROS -->
+      <div class="card">
+        <div class="card-title">📦 Outros</div>
+        <div class="field"><label>Outros gastos</label>
+          <input type="number" inputmode="decimal" id="outros" placeholder="0,00" oninput="save()"></div>
+      </div>
+
+      <!-- LAZER -->
+      <div class="card">
+        <div class="card-title">🎉 Lazer</div>
+
+        <button class="acc-toggle" onclick="toggleAcc()">
+          <span>Gerenciar categorias</span>
+          <span class="acc-arrow" id="acc-arrow">▼</span>
+        </button>
+
+        <div class="acc-body" id="lazer-acc">
+
+          <div class="sub-item">
+            <div class="sub-header" onclick="toggleSub('sair')">
+              <span>🚶 Sair</span>
+              <span class="sub-toggle-icon" id="si-sair">＋</span>
+            </div>
+            <div class="sub-body" id="sb-sair">
+              <div class="field" style="margin-top:4px"><label>Valor</label>
+                <input type="number" inputmode="decimal" id="lazer-sair" placeholder="0,00" oninput="save()"></div>
+            </div>
+          </div>
+
+          <div class="sub-item">
+            <div class="sub-header" onclick="toggleSub('festa')">
+              <span>🎊 Festa</span>
+              <span class="sub-toggle-icon" id="si-festa">＋</span>
+            </div>
+            <div class="sub-body" id="sb-festa">
+              <div class="field" style="margin-top:4px"><label>Valor</label>
+                <input type="number" inputmode="decimal" id="lazer-festa" placeholder="0,00" oninput="save()"></div>
+            </div>
+          </div>
+
+          <div class="sub-item">
+            <div class="sub-header" onclick="toggleSub('ifood')">
+              <span>🛵 iFood</span>
+              <span class="sub-toggle-icon" id="si-ifood">＋</span>
+            </div>
+            <div class="sub-body" id="sb-ifood">
+              <div class="field" style="margin-top:4px"><label>Valor</label>
+                <input type="number" inputmode="decimal" id="lazer-ifood" placeholder="0,00" oninput="save()"></div>
+            </div>
+          </div>
+
+          <div class="sub-item">
+            <div class="sub-header" onclick="toggleSub('jogos')">
+              <span>🎮 Jogos</span>
+              <span class="sub-toggle-icon" id="si-jogos">＋</span>
+            </div>
+            <div class="sub-body" id="sb-jogos">
+              <div class="field" style="margin-top:4px"><label>Valor</label>
+                <input type="number" inputmode="decimal" id="lazer-jogos" placeholder="0,00" oninput="save()"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /page-gastos -->
+
+    <!-- PAGE: TOTAL -->
+    <div class="page" id="page-total">
+      <div class="total-hero">
+        <div class="total-label-text">Total de Gastos</div>
+        <div class="total-big" id="total-display">R$ 0,00</div>
+        <div style="font-size:0.72rem;color:#6b8fd4;margin-top:8px" id="total-month-label"></div>
+      </div>
+
+      <div class="breakdown-grid" id="breakdown"></div>
+
+      <button class="btn-pdf" onclick="gerarPDF()">📄 Baixar Relatório Completo</button>
+      <button class="btn-reset" onclick="resetMes()">🔄 Limpar mês atual</button>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-gastos" onclick="goPage('gastos')">
+      <span class="nav-icon">📝</span>
+      <span>Gastos</span>
+    </button>
+    <button class="nav-item" id="nav-total" onclick="goPage('total')">
+      <span class="nav-icon">📊</span>
+      <span>Total</span>
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<!-- INSTALL BANNER -->
+<div id="install-banner">
+  <p>📲 Instalar como app no celular</p>
+  <button class="btn-install" onclick="installApp()">Instalar</button>
+  <button class="btn-dismiss" onclick="dismissInstall()">✕</button>
+</div>
+
+<script>
+// ── STATE ──
+const MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const ALL_IDS = ['aluguel','luz','mercado-comida','mercado-casa','academia','suplementacao','transporte','faculdade','cartao','outros','lazer-sair','lazer-festa','lazer-ifood','lazer-jogos'];
+
+let today = new Date();
+let curYear = today.getFullYear();
+let curMonth = today.getMonth();
+
+function monthKey(y, m) { return `gastos-${y}-${String(m+1).padStart(2,'0')}`; }
+function currentKey() { return monthKey(curYear, curMonth); }
+
+function getMonthData(key) {
+  try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; }
+}
+
+function fmt(n) {
+  if (isNaN(n) || n === null) n = 0;
+  return 'R$ ' + Number(n).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function v(id) { return parseFloat(document.getElementById(id)?.value) || 0; }
+
+// ── NAVIGATION ──
+function goPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+  document.getElementById('content').scrollTop = 0;
+  if (page === 'total') renderTotal();
+}
+
+// ── MONTH ──
+function changeMonth(dir) {
+  curMonth += dir;
+  if (curMonth < 0) { curMonth = 11; curYear--; }
+  if (curMonth > 11) { curMonth = 0; curYear++; }
+  loadMonth();
+}
+
+function updateMonthLabel() {
+  const txt = `${MONTHS_PT[curMonth]} ${curYear}`;
+  document.getElementById('month-label').textContent = txt;
+  document.getElementById('total-month-label').textContent = txt;
+}
+
+function loadMonth() {
+  updateMonthLabel();
+  const data = getMonthData(currentKey());
+  ALL_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = data[id] || '';
+  });
+}
+
+function save() {
+  const data = {};
+  ALL_IDS.forEach(id => {
+    const val = document.getElementById(id)?.value;
+    if (val) data[id] = val;
+  });
+  localStorage.setItem(currentKey(), JSON.stringify(data));
+  if (document.getElementById('page-total').classList.contains('active')) renderTotal();
+}
+
+// ── ACCORDION ──
+let accOpen = false;
+function toggleAcc() {
+  accOpen = !accOpen;
+  document.getElementById('lazer-acc').classList.toggle('open', accOpen);
+  const arr = document.getElementById('acc-arrow');
+  arr.textContent = accOpen ? '▲' : '▼';
+}
+
+const subOpen = {};
+function toggleSub(key) {
+  ['sair','festa','ifood','jogos'].forEach(k => {
+    if (k !== key && subOpen[k]) {
+      subOpen[k] = false;
+      document.getElementById('sb-' + k).classList.remove('open');
+      document.getElementById('si-' + k).classList.remove('open');
+      document.getElementById('si-' + k).textContent = '＋';
+    }
+  });
+  subOpen[key] = !subOpen[key];
+  document.getElementById('sb-' + key).classList.toggle('open', subOpen[key]);
+  const icon = document.getElementById('si-' + key);
+  icon.classList.toggle('open', subOpen[key]);
+  icon.textContent = subOpen[key] ? '－' : '＋';
+}
+
+// ── TOTAL ──
+const SECTIONS = [
+  { titulo: '🏠 Moradia',         itens: [['aluguel','Aluguel'],['luz','Luz']] },
+  { titulo: '🛒 Mercado',         itens: [['mercado-comida','Comida'],['mercado-casa','Casa']] },
+  { titulo: '💪 Saúde & Fitness', itens: [['academia','Academia'],['suplementacao','Suplementação']] },
+  { titulo: '🚌 Transporte',      itens: [['transporte','Transporte']] },
+  { titulo: '🎓 Educação',        itens: [['faculdade','Faculdade']] },
+  { titulo: '💳 Pagamentos',      itens: [['cartao','Cartão de Crédito']] },
+  { titulo: '📦 Outros',          itens: [['outros','Outros']] },
+  { titulo: '🎉 Lazer',           itens: [['lazer-sair','Sair'],['lazer-festa','Festa'],['lazer-ifood','iFood'],['lazer-jogos','Jogos']] },
+];
+
+function renderTotal() {
+  let total = 0;
+  const rows = [];
+
+  SECTIONS.forEach(s => {
+    let sub = 0;
+    s.itens.forEach(([id]) => sub += v(id));
+    if (sub > 0) {
+      total += sub;
+      rows.push({ label: s.titulo, val: sub });
+    }
+  });
+
+  document.getElementById('total-display').textContent = fmt(total);
+
+  const bd = document.getElementById('breakdown');
+  if (rows.length === 0) {
+    bd.innerHTML = '<div class="empty-state"><div class="emoji">📭</div>Nenhum gasto registrado neste mês.</div>';
+  } else {
+    bd.innerHTML = rows.map(r =>
+      `<div class="breakdown-row"><span class="b-label">${r.label}</span><span class="b-val">${fmt(r.val)}</span></div>`
+    ).join('');
+  }
+}
+
+// ── RESET ──
+function resetMes() {
+  if (!confirm(`Limpar todos os dados de ${MONTHS_PT[curMonth]} ${curYear}?`)) return;
+  localStorage.removeItem(currentKey());
+  loadMonth();
+}
+
+// ── PDF ──
+function gerarPDF() {
+  const data = new Date().toLocaleDateString('pt-BR');
+  const mes = `${MONTHS_PT[curMonth]} ${curYear}`;
+  let totalGeral = 0;
+  SECTIONS.forEach(s => s.itens.forEach(([id]) => totalGeral += v(id)));
+
+  const blocos = SECTIONS.map(s => {
+    const subtotal = s.itens.reduce((a,[id]) => a + v(id), 0);
+    const rows = s.itens.map(([id, label]) => {
+      const valor = v(id);
+      return `<tr><td style="padding-left:22px;color:#555">${label}</td><td style="${valor===0?'color:#ccc':''}">${fmt(valor)}</td></tr>`;
+    }).join('');
+    return `
+      <tr style="background:#ede9fe"><td colspan="2" style="padding:9px 14px;font-weight:bold;color:#5b21b6;font-size:0.95rem">${s.titulo}</td></tr>
+      ${rows}
+      <tr style="background:#f5f0ff"><td style="padding:7px 14px;color:#6d28d9;font-style:italic;font-size:0.85rem">Subtotal</td><td style="color:#6d28d9;font-style:italic">${fmt(subtotal)}</td></tr>
+    `;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório ${mes}</title>
+  <style>body{font-family:Arial,sans-serif;padding:32px;color:#1a0033}h1{color:#7c3aed;margin-bottom:4px}p{color:#888;font-size:.88rem;margin-bottom:24px}table{width:100%;border-collapse:collapse}th{background:#7c3aed;color:#fff;padding:10px 14px;text-align:left}td{padding:8px 14px;border-bottom:1px solid#eee}.total-row td{font-weight:bold;background:#dbeafe;color:#1d4ed8;font-size:1.1rem;padding:13px 14px}</style>
+  </head><body>
+  <h1>💸 Relatório de Gastos</h1>
+  <p>Mês: <strong>${mes}</strong> &nbsp;|&nbsp; Gerado em: ${data}</p>
+  <table><thead><tr><th>Categoria</th><th>Valor</th></tr></thead><tbody>
+  ${blocos}
+  <tr class="total-row"><td>TOTAL GERAL</td><td>${fmt(totalGeral)}</td></tr>
+  </tbody></table></body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (win) { win.onload = () => win.print(); }
+  else {
+    const a = document.createElement('a');
+    a.href = url; a.download = `gastos-${curYear}-${String(curMonth+1).padStart(2,'0')}.html`;
+    a.click();
+  }
+}
+
+// ── PWA INSTALL ──
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const banner = document.getElementById('install-banner');
+  banner.style.display = 'flex';
+});
+
+function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => { deferredPrompt = null; dismissInstall(); });
+}
+
+function dismissInstall() {
+  document.getElementById('install-banner').style.display = 'none';
+}
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ── INIT ──
+loadMonth();
+</script>
+</body>
+</html>
